@@ -56,12 +56,6 @@ namespace IMessageFinder
 				var deviceBackupFolder = di.GetDirectories ().First ();
 				const string iMesssageDB = "3d0d7e5fb2ce288813306e4d4636395e047a3d28";
 
-				if(deviceBackupFolder == null){
-					Error("No backup location could be determined. Please use iTunes to back up and try again.");
-					Exit();
-					return;
-				}
-
 				Info ("Found backup location: {0}", deviceBackupFolder.FullName);
 
 				//get the sqlite file we need to work with.
@@ -74,8 +68,6 @@ namespace IMessageFinder
 
 					//the output of all the records as text.
 					var fileOutputResult = string.Empty;
-
-
 
 					//now open it...
 					using (var conn = new SQLiteConnection (iMessageDBFile.FullName)) {
@@ -114,10 +106,15 @@ namespace IMessageFinder
 						"No iMessage database could be found. Please make sure you have backed up through iTunes and try again.");
 				}
 			}
+			catch(DirectoryNotFoundException e){
+				Error("No backup location could be determined. Please use iTunes to back up and try again.");
+			}
+			catch(FileNotFoundException e){
+				Error ("Could not locate the messages database. Please try backing up the device again.");
+			}
 			catch(Exception e){
 				Error (e.Message);
 			}
-
 		}
 
 		static void Success(string format, params string[] data){
