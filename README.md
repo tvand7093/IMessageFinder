@@ -1,10 +1,13 @@
-# iMessageTranscript
+# iMessageFinder
 A simple cross platfrom CLI tool for pulling text messages and saving them to a file.
 
 ###Important Note
 Currently this program only supports when a single device is backed up to the computer. 
 
-###Steps to Run
+###Quick Start
+To run, simply specify a phone number arguement: `./IMessageFinder.exe 1234567890`. It is recomended you take the steps below first otherwise you won't get the most current messages.
+
+###Steps to run for most current messages
 1. First plug in your iDevice and open up iTunes.
 2. Make a local computer copy backup of your iDevice.
 3. Open up the command line/terminal and navigate to the binary file produced by this project.
