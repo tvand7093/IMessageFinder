@@ -50,60 +50,74 @@ namespace IMessageFinder
 
 			Info ("Determined OS is: {0}", system);
 
-			//find the db file that we need to open.
-			var di = new DirectoryInfo (backupDirRoot);
-			var deviceBackupFolder = di.GetDirectories ().First ();
-			const string iMesssageDB = "3d0d7e5fb2ce288813306e4d4636395e047a3d28";
+			try{
+				//find the db file that we need to open.
+				var di = new DirectoryInfo (backupDirRoot);
+				var deviceBackupFolder = di.GetDirectories ().First ();
+				const string iMesssageDB = "3d0d7e5fb2ce288813306e4d4636395e047a3d28";
 
-			Info ("Found backup location: {0}", deviceBackupFolder.FullName);
-
-			//get the sqlite file we need to work with.
-			var iMessageDBFile = deviceBackupFolder.GetFiles ()
-				.FirstOrDefault (f => f.Name == iMesssageDB);
-
-			if (iMessageDBFile != null) {
-				//this is the db file to work with.
-				Info ("Opening iMessage database at: {0}", iMessageDBFile.FullName);
-
-				//the output of all the records as text.
-				var fileOutputResult = string.Empty;
-
-				//now open it...
-				using (var conn = new SQLiteConnection (iMessageDBFile.FullName)) {
-					//the query to get the messages.
-					var query = string.Format (
-						            " SELECT message.is_from_me as IsFromMe, message.text as Text" +
-						            " FROM message, handle" +
-						            " WHERE message.handle_id = handle.ROWID" +
-						            " AND handle.id = '+1{0}'" +
-						            " ORDER BY message.date;", args [0]);
-					//run the sql.
-					var data = conn.Query<SqlResult>(query, new object[]{});
-					var sb = new StringBuilder ();
-					foreach (var row in data) {
-						if (!string.IsNullOrWhiteSpace (row.Text)) {
-							if (row.IsFromMe) {
-								sb.AppendLine ("[From Me] " + row.Text);
-							} else {
-								sb.AppendLine (string.Format("[From {0}] {1}", args[0], row.Text));
-							}
-						}
-					}
-					fileOutputResult = sb.ToString ();
+				if(deviceBackupFolder == null){
+					Error("No backup location could be determined. Please use iTunes to back up and try again.");
+					Exit();
+					return;
 				}
 
-				//now write to file
-				var outputFile = Path.Combine (
-					                 Environment.GetFolderPath (Environment.SpecialFolder.Desktop),
-					                 string.Format ("iMessageHistory-{0}.txt", args [0]));
-				
-				File.WriteAllText (outputFile, fileOutputResult);
-				Success ("Wrote messages to file: {0}", outputFile);
-				Exit ();
-			} else {
-				Error (
-					"No iMessage database could be found. Please make sure you have backed up through iTunes and try again.");
+				Info ("Found backup location: {0}", deviceBackupFolder.FullName);
+
+				//get the sqlite file we need to work with.
+				var iMessageDBFile = deviceBackupFolder.GetFiles ()
+					.FirstOrDefault (f => f.Name == iMesssageDB);
+
+				if (iMessageDBFile != null) {
+					//this is the db file to work with.
+					Info ("Opening iMessage database at: {0}", iMessageDBFile.FullName);
+
+					//the output of all the records as text.
+					var fileOutputResult = string.Empty;
+
+
+
+					//now open it...
+					using (var conn = new SQLiteConnection (iMessageDBFile.FullName)) {
+						//the query to get the messages.
+						var query = string.Format (
+							" SELECT message.is_from_me as IsFromMe, message.text as Text" +
+							" FROM message, handle" +
+							" WHERE message.handle_id = handle.ROWID" +
+							" AND handle.id = '+1{0}'" +
+							" ORDER BY message.date;", args [0]);
+						//run the sql.
+						var data = conn.Query<SqlResult>(query, new object[]{});
+						var sb = new StringBuilder ();
+						foreach (var row in data) {
+							if (!string.IsNullOrWhiteSpace (row.Text)) {
+								if (row.IsFromMe) {
+									sb.AppendLine ("[From Me] " + row.Text);
+								} else {
+									sb.AppendLine (string.Format("[From {0}] {1}", args[0], row.Text));
+								}
+							}
+						}
+						fileOutputResult = sb.ToString ();
+					}
+
+					//now write to file
+					var outputFile = Path.Combine (
+						Environment.GetFolderPath (Environment.SpecialFolder.Desktop),
+						string.Format ("iMessageHistory-{0}.txt", args [0]));
+
+					File.WriteAllText (outputFile, fileOutputResult);
+					Success ("Wrote messages to file: {0}", outputFile);
+					Exit ();
+				} else {
+					Error (
+						"No iMessage database could be found. Please make sure you have backed up through iTunes and try again.");
+				}
 			}
+			catch(Exception e){
+				Error (e.Message);
+			}
+
 		}
 
 		static void Success(string format, params string[] data){
